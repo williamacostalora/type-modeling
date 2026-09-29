@@ -163,10 +163,10 @@ class PythonObjectTest {
         barType.set("socks", null);
         foo.set("socks", null);
 
-        assertEqualsPyStr("rainbow",fooType.get("socks"));
-        assertEqualsPyStr(null, foo.get("socks"));
-        assertEqualsPyStr(null, barType.get("socks"));
-        assertEqualsPyStr(null, bar.get("socks"));
+        assertEqualsPyStr("rainbow",fooType.get("socks")); // check original value
+        assertEqualsPyStr(null, foo.get("socks")); // null value beats valuu=e from type
+        assertEqualsPyStr(null, barType.get("socks")); //null beats value from base
+        assertEqualsPyStr(null, bar.get("socks")); // inherits bar's null and not Foo's rainbow
     }
 
 
