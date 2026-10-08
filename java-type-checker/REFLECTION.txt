@@ -1,0 +1,13 @@
+Reflection
+
+When working on this assignment, I struggled most with check_types
+because I found hard to remember to check the child nodes first and building
+the list of argument types for method calls.
+
+Professor Cantrell's solution is similar to mine in logic but the style is different.
+For example, I used a loop with append to build actual_types, while he used a list comprehension.
+He also completed the bonus section.
+
+What helped me most was Professor Cantrell's comment about checking the lhs because it made me
+realize that checking the rhs is necessary for nested expressions, but checking lhs is mostly for completeness
+since a variable must not have a type error.
