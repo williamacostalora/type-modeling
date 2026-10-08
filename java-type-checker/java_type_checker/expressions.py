@@ -35,28 +35,37 @@ class JavaVariable(JavaExpression):
     after the initial construction of the AST. In this sample project, however, we simply specify
     the declared_type for every variable reference.
     """
+
     def __init__(self, name, declared_type):
-        self.name = name                    #: The name of the variable (str)
+        self.name = name  #: The name of the variable (str)
         self.declared_type = declared_type  #: The declared type of the variable (JavaType)
 
     def static_type(self):
         return self.declared_type
 
+    def check_types(self):
+        pass
+
 
 class JavaLiteral(JavaExpression):
     """A literal value entered in the code, e.g. `5` in the expression `x + 5`.
     """
+
     def __init__(self, value, type):
         self.value = value  #: The literal value, as a string
-        self.type = type    #: The type of the literal (JavaType)
+        self.type = type  #: The type of the literal (JavaType)
 
     def static_type(self):
         return self.type
+
+    def check_types(self):
+        pass
 
 
 class JavaNullLiteral(JavaLiteral):
     """The literal value `null` in Java code.
     """
+
     def __init__(self):
         super().__init__("null", JavaBuiltInTypes.NULL)
 
@@ -68,12 +77,27 @@ class JavaAssignment(JavaExpression):
         lhs (JavaVariable): The variable whose value this assignment updates.
         rhs (JavaExpression): The expression whose value will be assigned to the lhs.
     """
+
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
 
     def static_type(self):
         return self.lhs.static_type()
+
+    def check_types(self):
+        self.lhs.check_types()
+        self.rhs.check_types()
+
+        if not self.rhs.static_type().is_subtype_of(self.lhs.static_type()):
+            raise JavaTypeMismatchError(
+                "Cannot assign {0} to variable {1} of type {2}".format(
+                    self.rhs.static_type().name,
+                    self.lhs.name,
+                    self.lhs.static_type().name
+                )
+            )
+
 
 class JavaMethodCall(JavaExpression):
     """A Java method invocation.
@@ -98,6 +122,36 @@ class JavaMethodCall(JavaExpression):
 
     def static_type(self):
         return self.receiver.static_type().method_named(self.method_name).return_type
+
+    def check_types(self):
+        self.receiver.check_types()
+        for arg in self.args:
+            arg.check_types()
+
+        receiver_type = self.receiver.static_type()
+        method = receiver_type.method_named(self.method_name)
+        call_name = "{0}.{1}()".format(receiver_type.name, self.method_name)
+
+        expected_types = method.parameter_types
+
+        actual_types = []
+        for arg in self.args:
+            actual_types.append(arg.static_type())
+
+        if len(actual_types) != len(expected_types):
+            raise JavaArgumentCountError(
+                "Wrong number of arguments for {0}: expected {1}, got {2}".format(
+                    call_name,
+                    len(expected_types),
+                    len(actual_types)))
+
+        for actual, expected in zip(actual_types, expected_types):
+            if not actual.is_subtype_of(expected):
+                raise JavaTypeMismatchError(
+                    "{0} expects arguments of type {1}, but got {2}".format(
+                        call_name,
+                        _names(expected_types),
+                        _names(actual_types)))
 
 
 class JavaConstructorCall(JavaExpression):
